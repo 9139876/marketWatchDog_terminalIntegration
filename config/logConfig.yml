@@ -1,0 +1,38 @@
+version: 1
+
+# Configure logging from scratch.
+disable_existing_loggers: True
+auto_flush_timeout: 5
+
+# You can also configure non-root loggers.
+loggers:
+  main_logger:
+    propagate: False
+    level: DEBUG
+    handlers:
+      - seq
+      - console
+
+  mt5_logger:
+    propagate: False
+    level: INFO
+    handlers:
+      - seq
+      - console
+
+handlers:
+  # Log to STDOUT
+  console:
+    class: seqlog.structured_logging.ConsoleStructuredLogHandler
+    formatter: seq
+
+  # Log to Seq
+  seq:
+    class: seqlog.structured_logging.SeqLogHandler
+    formatter: seq
+    #    server_url: 'http://localhost:5341'
+    server_url: 'http://192.168.1.10:9090'
+
+formatters:
+  seq:
+    style: '{'
