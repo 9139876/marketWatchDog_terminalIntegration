@@ -4,10 +4,12 @@ from logging import Logger
 
 import MetaTrader5 as mt5
 from MetaTrader5 import last_error
+from numpy import number
 
 from metatrader.models.metaTraderOpenedPosition import MetaTraderOpenedPosition
 from metatrader.models.metaTraderQuote import Quote
 from metatrader.models.metaTraderSymbolInfo import MetaTraderSymbolInfo
+from metatrader.models.orderTypeEnum import Metatrader5OrderTypeEnum
 from metatrader.models.timeframe_enum import Metatrader5TimeframeEnum
 
 
@@ -46,6 +48,7 @@ class MetaTrader5Integration:
             self.logger.error("Ошибка при обращении к MetaTrader - {exception}, mt5 error - {mt5_error}", exception=e, mt5_error=mt5.last_error())
             raise e
 
+    # region Terminal Info
     def get_version(self):
         def get_version_internal():
             version = mt5.version()
@@ -58,14 +61,34 @@ class MetaTrader5Integration:
             return mt5.terminal_info()
 
         return self.__connect_and_do_work__(get_info_internal, True)
+    # endregion
 
+    # region Account info
+    def get_account_info(self):
+
+        def get_account_info_internal():
+            return mt5.account_info()._asdict()
+
+        return self.__connect_and_do_work__(get_account_info_internal, True)
+
+    # endregion
+
+    # region Opened Positions
     def get_opened_positions(self) -> list[MetaTraderOpenedPosition]:
         def get_opened_positions_internal():
             opened_positions = mt5.positions_get()
-            # a=json.dumps(opened_positions)
             return list(map(lambda x: MetaTraderOpenedPosition.create(x), opened_positions))
 
         return self.__connect_and_do_work__(get_opened_positions_internal, True)
+    # endregion
+
+    # region Symbol Info
+    def get_symbols(self)-> MetaTraderSymbolInfo:
+        def get_symbols_internal():
+            symbols = mt5.symbols_get()
+            return list(map(lambda x: MetaTraderSymbolInfo(x), symbols))
+
+        return self.__connect_and_do_work__(get_symbols_internal, True)
 
     def get_symbol_info(self, symbol: str) -> MetaTraderSymbolInfo:
         def get_symbol_info_internal():
@@ -73,7 +96,35 @@ class MetaTrader5Integration:
             return MetaTraderSymbolInfo(symbol_info)
 
         return self.__connect_and_do_work__(get_symbol_info_internal, True)
+    # endregion
 
+    # region Quotes
+    def get_last_quotes(self, symbols: list[str], timeframe_str: str, requested_count: int) -> dict[str, list[Quote]]:
+
+        def get_last_quotes_internal():
+            count = min([requested_count, 5000])
+            timeframe = Metatrader5TimeframeEnum[timeframe_str]
+            result: dict[str, list[Quote]] = {}
+
+            for ticker in symbols:
+                try:
+                    rates = mt5.copy_rates_from_pos(ticker, timeframe.value, 0, count)
+                    if rates is None or len(rates) == 0:
+                        result.update({ticker: []})
+                        continue
+
+                    quotes = list(map(lambda x: Quote(x), rates))
+                    result.update({ticker: quotes})
+                except Exception as e:
+                    self.logger.error("Ошибка при получении котировок для {ticker_name} - {exception}", ticker_name=ticker, exception=e)
+                    result.update({ticker: []})
+
+            return result
+
+        return self.__connect_and_do_work__(get_last_quotes_internal, True)
+    # endregion
+
+    # region Position Management
     def update_stop_loss(self, identifier: int, sl_value: float) -> None:
 
         def update_stop_loss_internal():
@@ -104,30 +155,24 @@ class MetaTrader5Integration:
             mt5.Close(symbol)
 
         self.__connect_and_do_work__(close_position_internal)
+    # endregion
 
-    def get_last_quotes(self, symbols: list[str], timeframe_str: str, requested_count: int) -> dict[str, list[Quote]]:
+    # region order_check
 
-        def get_last_quotes_internal():
-            count = min([requested_count, 5000])
-            timeframe = Metatrader5TimeframeEnum[timeframe_str]
-            result: dict[str, list[Quote]] = {}
+    def order_calc_profit(self, action_str: str, symbol: str, volume: float, price_open: float, price_close: float) -> number:
 
-            for ticker in symbols:
-                try:
-                    rates = mt5.copy_rates_from_pos(ticker, timeframe.value, 0, count)
-                    if rates is None or len(rates) == 0:
-                        result.update({ticker: []})
-                        continue
+        def order_calc_profit_internal():
+            return mt5.order_calc_profit(
+                Metatrader5OrderTypeEnum[action_str].value,
+                symbol,
+                volume,
+                price_open,
+                price_close)
 
-                    quotes = list(map(lambda x: Quote(x), rates))
-                    result.update({ticker: quotes})
-                except Exception as e:
-                    self.logger.error("Ошибка при получении котировок для {ticker_name} - {exception}", ticker_name=ticker, exception=e)
-                    result.update({ticker: []})
+        return self.__connect_and_do_work__(order_calc_profit_internal, True)
 
-            return result
 
-        return self.__connect_and_do_work__(get_last_quotes_internal, True)
+    # endregion
 
     # def update_terminal_symbols(self, symbols: list[str], verbose: bool = True) -> None:
     #     def update_terminal_symbols_internal():
