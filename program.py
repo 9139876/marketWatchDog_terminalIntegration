@@ -98,6 +98,17 @@ def close_position():
 
     return web_helpers.execute(internal)
 
+@app.route(f'{position_management_controller}/open-position', methods=['POST'])
+def open_position():
+    def internal():
+        data = request.get_json()
+        order_type_str = data['orderType']
+        symbol = data['symbol']
+        volume = float(data['volume'])
+
+        result = mt5.open_position(order_type_str, symbol, volume)
+
+    return web_helpers.execute(internal)
 
 # endregion
 

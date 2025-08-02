@@ -61,6 +61,7 @@ class MetaTrader5Integration:
             return mt5.terminal_info()
 
         return self.__connect_and_do_work__(get_info_internal, True)
+
     # endregion
 
     # region Account info
@@ -80,10 +81,11 @@ class MetaTrader5Integration:
             return list(map(lambda x: MetaTraderOpenedPosition.create(x), opened_positions))
 
         return self.__connect_and_do_work__(get_opened_positions_internal, True)
+
     # endregion
 
     # region Symbol Info
-    def get_symbols(self)-> MetaTraderSymbolInfo:
+    def get_symbols(self) -> MetaTraderSymbolInfo:
         def get_symbols_internal():
             symbols = mt5.symbols_get()
             return list(map(lambda x: MetaTraderSymbolInfo(x), symbols))
@@ -96,6 +98,7 @@ class MetaTrader5Integration:
             return MetaTraderSymbolInfo(symbol_info)
 
         return self.__connect_and_do_work__(get_symbol_info_internal, True)
+
     # endregion
 
     # region Quotes
@@ -122,6 +125,7 @@ class MetaTrader5Integration:
             return result
 
         return self.__connect_and_do_work__(get_last_quotes_internal, True)
+
     # endregion
 
     # region Position Management
@@ -145,16 +149,46 @@ class MetaTrader5Integration:
                 "ENUM_ORDER_STATE": mt5.ORDER_FILLING_RETURN
             }
 
-            mt5.order_send(request)
+            result = mt5.order_send(request)
+
+            if result is not None:
+                raise Exception(mt5.last_error())
+
+            return result
 
         self.__connect_and_do_work__(update_stop_loss_internal)
 
     def close_position(self, symbol: str) -> None:
 
         def close_position_internal():
-            mt5.Close(symbol)
+            result = mt5.Close(symbol)
 
-        self.__connect_and_do_work__(close_position_internal)
+            if result is not None:
+                raise Exception(mt5.last_error())
+
+            return result
+
+        self.__connect_and_do_work__(close_position_internal, True)
+
+    def open_position(self, order_type_str: str, symbol: str, volume: float):
+        def open_position_internal():
+            result = None
+            order_type = Metatrader5OrderTypeEnum[order_type_str].value
+
+            if order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_BUY:
+                result = mt5.Buy(symbol, volume)
+            elif order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_SELL:
+                result = mt5.Sell(symbol, volume)
+            else:
+                raise Exception(f'{order_type} is not supported')
+
+            if result is not None:
+                raise Exception(mt5.last_error())
+
+            return result
+
+        self.__connect_and_do_work__(open_position_internal, True)
+
     # endregion
 
     # region order_check
@@ -170,7 +204,6 @@ class MetaTrader5Integration:
                 price_close)
 
         return self.__connect_and_do_work__(order_calc_profit_internal, True)
-
 
     # endregion
 
