@@ -27,6 +27,7 @@ def get_version():
 # region Account info
 account_info_controller = '/account-info'
 
+
 @app.route(f'{account_info_controller}/get', methods=['GET'])
 def get_account_info():
     def internal():
@@ -35,6 +36,8 @@ def get_account_info():
         return jsonpickle.encode(account_info, unpicklable=False)
 
     return web_helpers.execute(internal)
+
+
 # endregion
 
 # region Opened Positions
@@ -55,6 +58,7 @@ def get_opened_positions():
 # region Symbol Info
 symbol_info_controller = '/symbol-info'
 
+
 @app.route(f'{symbol_info_controller}/get-symbols', methods=['GET'])
 def get_symbols():
     def internal():
@@ -62,6 +66,7 @@ def get_symbols():
         return jsonpickle.encode(symbols, unpicklable=False)
 
     return web_helpers.execute(internal)
+
 
 @app.route(f'{symbol_info_controller}/get-symbol-info', methods=['GET'])
 def get_symbol_info():
@@ -85,7 +90,11 @@ def update_stop_loss():
         data = request.get_json()
         identifier = int(data['identifier'])
         sl_value = float(data['stopLossValue'])
-        mt5.update_stop_loss(identifier, sl_value)
+
+        result_dirt = mt5.update_stop_loss(identifier, sl_value)
+        result = web_helpers.dict_keys_modify(result_dirt, web_helpers.snake_to_lower_camel_case)
+
+        return jsonpickle.encode(result, unpicklable=False)
 
     return web_helpers.execute(internal)
 
@@ -94,21 +103,31 @@ def update_stop_loss():
 def close_position():
     def internal():
         symbol = request.args.get('symbol')
-        mt5.close_position(symbol)
+
+        result_dirt = mt5.close_position(symbol)
+        result = web_helpers.dict_keys_modify(result_dirt, web_helpers.snake_to_lower_camel_case)
+
+        return jsonpickle.encode(result, unpicklable=False)
 
     return web_helpers.execute(internal)
+
 
 @app.route(f'{position_management_controller}/open-position', methods=['POST'])
 def open_position():
     def internal():
         data = request.get_json()
-        order_type_str = data['orderType']
+        action_str = data['action']
         symbol = data['symbol']
         volume = float(data['volume'])
+        stop_loss = float(data['stopLoss'])
 
-        result = mt5.open_position(order_type_str, symbol, volume)
+        result_dirt = mt5.open_position(action_str, symbol, volume, stop_loss)
+        result = web_helpers.dict_keys_modify(result_dirt, web_helpers.snake_to_lower_camel_case)
+
+        return jsonpickle.encode(result, unpicklable=False)
 
     return web_helpers.execute(internal)
+
 
 # endregion
 
@@ -136,6 +155,7 @@ def get_last_quotes():
 
 order_check_controller = '/order-check'
 
+
 @app.route(f'{order_check_controller}/order-calc-profit', methods=['POST'])
 def order_calc_profit():
     def internal():
@@ -146,14 +166,43 @@ def order_calc_profit():
         price_open = float(data['priceOpen'])
         price_close = float(data['priceClose'])
 
-        order_profit = mt5.order_calc_profit(action_str, symbol, volume, price_open, price_close)
-
-        if order_profit is None:
-            raise Exception('No order profit found')
-
-        return jsonpickle.encode(order_profit, unpicklable=False)
+        result = mt5.order_calc_profit(action_str, symbol, volume, price_open, price_close)
+        return jsonpickle.encode(result, unpicklable=False)
 
     return web_helpers.execute(internal)
+
+
+@app.route(f'{order_check_controller}/order-calc-margin', methods=['POST'])
+def order_calc_margin():
+    def internal():
+        data = request.get_json()
+        action_str = data['action']
+        symbol = data['symbol']
+        volume = float(data['volume'])
+        price_open = float(data['priceOpen'])
+
+        result = mt5.order_calc_margin(action_str, symbol, volume, price_open)
+        return jsonpickle.encode(result, unpicklable=False)
+
+    return web_helpers.execute(internal)
+
+
+@app.route(f'{order_check_controller}/order-check', methods=['POST'])
+def order_check():
+    def internal():
+        data = request.get_json()
+        action_str = data['action']
+        symbol = data['symbol']
+        volume = float(data['volume'])
+        stop_loss = float(data['stopLoss'])
+
+        result_dirt = mt5.order_check(action_str, symbol, volume, stop_loss)
+        result = web_helpers.dict_keys_modify(result_dirt, web_helpers.snake_to_lower_camel_case)
+
+        return jsonpickle.encode(result, unpicklable=False)
+
+    return web_helpers.execute(internal)
+
 
 # endregion
 

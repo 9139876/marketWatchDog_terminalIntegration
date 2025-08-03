@@ -65,7 +65,7 @@ class MetaTrader5Integration:
     # endregion
 
     # region Account info
-    def get_account_info(self):
+    def get_account_info(self) -> dict:
 
         def get_account_info_internal():
             return mt5.account_info()._asdict()
@@ -129,7 +129,7 @@ class MetaTrader5Integration:
     # endregion
 
     # region Position Management
-    def update_stop_loss(self, identifier: int, sl_value: float) -> None:
+    def update_stop_loss(self, identifier: int, sl_value: float) -> dict:
 
         def update_stop_loss_internal():
             positions = list(filter(lambda x: x.identifier == identifier, self.get_opened_positions()))
@@ -149,61 +149,121 @@ class MetaTrader5Integration:
                 "ENUM_ORDER_STATE": mt5.ORDER_FILLING_RETURN
             }
 
-            result = mt5.order_send(request)
+            result = mt5.order_send(request)._asdict()
 
-            if result is not None:
+            if result is None:
                 raise Exception(mt5.last_error())
 
             return result
 
-        self.__connect_and_do_work__(update_stop_loss_internal)
+        return self.__connect_and_do_work__(update_stop_loss_internal)
 
-    def close_position(self, symbol: str) -> None:
+    def open_position(self, action_str: str, symbol: str, volume: float, stop_loss: float) -> dict:
+        def open_position_internal():
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": volume,
+                "type": Metatrader5OrderTypeEnum[action_str].value,
+                "sl": stop_loss
+            }
+
+            result = mt5.order_send(request)._asdict()
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return result
+
+        return self.__connect_and_do_work__(open_position_internal, True)
+
+    # Старая версия, если новая заработает - эту удалить к чертям
+    # def open_position(self, order_type_str: str, symbol: str, volume: float):
+    #     def open_position_internal():
+    #         result = None
+    #         order_type = Metatrader5OrderTypeEnum[order_type_str].value
+    #
+    #         if order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_BUY:
+    #             result = mt5.Buy(symbol, volume)
+    #         elif order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_SELL:
+    #             result = mt5.Sell(symbol, volume)
+    #         else:
+    #             raise Exception(f'{order_type} is not supported')
+    #
+    #         if result is None:
+    #             raise Exception(mt5.last_error())
+    #
+    #         return result
+    #
+    #     self.__connect_and_do_work__(open_position_internal, True)
+
+    def close_position(self, symbol: str) -> dict:
 
         def close_position_internal():
-            result = mt5.Close(symbol)
+            result = mt5.Close(symbol)._asdict()
 
-            if result is not None:
+            if result is None:
                 raise Exception(mt5.last_error())
 
             return result
 
-        self.__connect_and_do_work__(close_position_internal, True)
-
-    def open_position(self, order_type_str: str, symbol: str, volume: float):
-        def open_position_internal():
-            result = None
-            order_type = Metatrader5OrderTypeEnum[order_type_str].value
-
-            if order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_BUY:
-                result = mt5.Buy(symbol, volume)
-            elif order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_SELL:
-                result = mt5.Sell(symbol, volume)
-            else:
-                raise Exception(f'{order_type} is not supported')
-
-            if result is not None:
-                raise Exception(mt5.last_error())
-
-            return result
-
-        self.__connect_and_do_work__(open_position_internal, True)
+        return self.__connect_and_do_work__(close_position_internal, True)
 
     # endregion
 
     # region order_check
 
     def order_calc_profit(self, action_str: str, symbol: str, volume: float, price_open: float, price_close: float) -> number:
-
         def order_calc_profit_internal():
-            return mt5.order_calc_profit(
+            result = mt5.order_calc_profit(
                 Metatrader5OrderTypeEnum[action_str].value,
                 symbol,
                 volume,
                 price_open,
-                price_close)
+                price_close
+            )
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return result
 
         return self.__connect_and_do_work__(order_calc_profit_internal, True)
+
+    def order_calc_margin(self, action_str: str, symbol: str, volume: float, price_open: float) -> number:
+        def order_calc_margin_internal():
+            result = mt5.order_calc_margin(
+                Metatrader5OrderTypeEnum[action_str].value,
+                symbol,
+                volume,
+                price_open
+            )
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return result
+
+        return self.__connect_and_do_work__(order_calc_margin_internal, True)
+
+    def order_check(self, action_str: str, symbol: str, volume: float, stop_loss: float) -> dict:
+        def order_check_internal():
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": volume,
+                "type": Metatrader5OrderTypeEnum[action_str].value,
+                "sl": stop_loss
+            }
+
+            result = mt5.order_check(request)._asdict()
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return result
+
+        return self.__connect_and_do_work__(order_check_internal, True)
 
     # endregion
 
