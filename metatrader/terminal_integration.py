@@ -126,6 +126,34 @@ class MetaTrader5Integration:
 
         return self.__connect_and_do_work__(get_last_quotes_internal, True)
 
+    def get_quotes(self, symbol: str, timeframe_str: str, requested_count: int) -> list[Quote]:
+
+        def get_quotes_internal():
+            timeframe = Metatrader5TimeframeEnum[timeframe_str]
+            result: list[Quote] = []
+            start_position = 0
+
+            while start_position < requested_count:
+                try:
+                    count = min([requested_count - len(result), 5000])
+                    rates = mt5.copy_rates_from_pos(symbol, timeframe.value, start_position, count)
+
+                    if rates is None or len(rates) == 0:
+                        break
+
+                    quotes = list(map(lambda x: Quote(x), rates))
+                    result.extend(quotes)
+                    start_position += len(quotes)
+
+                except Exception as e:
+                    self.logger.error("Ошибка при получении котировок для {ticker_name} - {exception}", ticker_name=ticker, exception=e)
+                    result = []
+                    break
+
+            return result
+
+        return self.__connect_and_do_work__(get_quotes_internal, True)
+
     # endregion
 
     # region Position Management

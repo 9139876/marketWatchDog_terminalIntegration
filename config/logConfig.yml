@@ -13,7 +13,14 @@ loggers:
       - seq
       - console
 
-  mt5_logger:
+  mt5_alfa_forex_logger:
+    propagate: False
+    level: INFO
+    handlers:
+      - seq
+      - console
+
+  mt5_finam_logger:
     propagate: False
     level: INFO
     handlers:
