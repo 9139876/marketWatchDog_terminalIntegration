@@ -22,7 +22,7 @@ class MetaTrader5Integration:
             self.logger.fatal("Ошибка установки соединения с MetaTrader5 ({path}) - {err}", path=self.metatrader_path, err=mt5.last_error())
             mt5.shutdown()
         else:
-            self.logger.info("Соединение с MetaTrader5 установлено")
+            self.logger.info(f'Соединение с [{metatrader_path}] установлено')
 
     def __connect_and_do_work__(self, func: Callable, is_returned_value: bool = False, attempt: int = 0):
         try:
@@ -129,6 +129,9 @@ class MetaTrader5Integration:
     def get_quotes(self, symbol: str, timeframe_str: str, requested_count: int) -> list[Quote]:
 
         def get_quotes_internal():
+            if requested_count <= 0:
+                return []
+
             timeframe = Metatrader5TimeframeEnum[timeframe_str]
             result: list[Quote] = []
             start_position = 0

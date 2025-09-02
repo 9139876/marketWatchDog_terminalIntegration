@@ -16,7 +16,7 @@ terminal_info_controller = '/terminal-info'
 @app.route(f'{terminal_info_controller}/version', methods=['GET'])
 def get_version():
     def internal():
-        dealer = request.args.get('dealer')
+        dealer = request.args.get('dealerType')
         return json.dumps(mt5Manager.get(dealer).get_version())
 
     return web_helpers.execute(internal)
@@ -31,7 +31,7 @@ account_info_controller = '/account-info'
 @app.route(f'{account_info_controller}/get', methods=['GET'])
 def get_account_info():
     def internal():
-        dealer = request.args.get('dealer')
+        dealer = request.args.get('dealerType')
         account_info_dirt = mt5Manager.get(dealer).get_account_info()
         account_info = web_helpers.dict_keys_modify(account_info_dirt, web_helpers.snake_to_lower_camel_case)
         return jsonpickle.encode(account_info, unpicklable=False)
@@ -48,7 +48,7 @@ opened_positions_controller = '/opened-positions'
 @app.route(f'{opened_positions_controller}/get', methods=['GET'])
 def get_opened_positions():
     def internal():
-        dealer = request.args.get('dealer')
+        dealer = request.args.get('dealerType')
         opened_positions = mt5Manager.get(dealer).get_opened_positions()
         return jsonpickle.encode(opened_positions, unpicklable=False)
 
@@ -64,7 +64,7 @@ symbol_info_controller = '/symbol-info'
 @app.route(f'{symbol_info_controller}/get-symbols', methods=['GET'])
 def get_symbols():
     def internal():
-        dealer = request.args.get('dealer')
+        dealer = request.args.get('dealerType')
         symbols = mt5Manager.get(dealer).get_symbols()
         return jsonpickle.encode(symbols, unpicklable=False)
 
@@ -74,7 +74,7 @@ def get_symbols():
 @app.route(f'{symbol_info_controller}/get-symbol-info', methods=['GET'])
 def get_symbol_info():
     def internal():
-        dealer = request.args.get('dealer')
+        dealer = request.args.get('dealerType')
         symbol = request.args.get('symbol')
         symbol_info = mt5Manager.get(dealer).get_symbol_info(symbol)
         return jsonpickle.encode(symbol_info, unpicklable=False)
@@ -107,7 +107,7 @@ def update_stop_loss():
 @app.route(f'{position_management_controller}/close-position', methods=['POST'])
 def close_position():
     def internal():
-        dealer = request.args.get('dealer')
+        dealer = request.args.get('dealerType')
         symbol = request.args.get('symbol')
 
         result_dirt = mt5Manager.get(dealer).close_position(symbol)
