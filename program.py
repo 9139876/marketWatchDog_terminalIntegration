@@ -92,7 +92,7 @@ position_management_controller = '/position_management'
 def update_stop_loss():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         identifier = int(data['identifier'])
         sl_value = float(data['stopLossValue'])
 
@@ -122,7 +122,7 @@ def close_position():
 def open_position():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         symbol = data['symbol']
         action_str = data['action']
         volume = float(data['volume'])
@@ -146,7 +146,7 @@ quotes_controller = '/quotes'
 def get_last_quotes():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         symbols = data['symbols']
         timeframe = data['timeframe']
         count = int(data['count'])
@@ -161,7 +161,7 @@ def get_last_quotes():
 def get_quotes():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         symbol = data['symbol']
         timeframe = data['timeframe']
         count = int(data['count'])
@@ -183,7 +183,7 @@ order_check_controller = '/order-check'
 def order_calc_profit():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         symbol = data['symbol']
         action_str = data['action']
         volume = float(data['volume'])
@@ -200,7 +200,7 @@ def order_calc_profit():
 def order_calc_margin():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         symbol = data['symbol']
         action_str = data['action']
         volume = float(data['volume'])
@@ -216,7 +216,7 @@ def order_calc_margin():
 def order_check():
     def internal():
         data = request.get_json()
-        dealer = data["dealer"]
+        dealer = data["dealerType"]
         symbol = data['symbol']
         action_str = data['action']
         volume = float(data['volume'])
