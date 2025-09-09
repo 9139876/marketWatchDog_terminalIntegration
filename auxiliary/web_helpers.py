@@ -7,7 +7,7 @@ def __serialize_success_response__(payload: str) -> str:
 
 
 def __serialize_error_response__(ex: Exception) -> str:
-    response = {"isSuccess": False, "errorMessage": f'{type(ex)} - {ex}'}
+    response = {"isSuccess": False, "errorMessage": f'{ex}'}
     return json.dumps(response)
 
 

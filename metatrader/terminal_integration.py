@@ -3,7 +3,7 @@ from collections.abc import Callable
 from logging import Logger
 
 import MetaTrader5 as mt5
-from MetaTrader5 import last_error
+# from MetaTrader5 import last_error
 from numpy import number
 
 from metatrader.models.metaTraderOpenedPosition import MetaTraderOpenedPosition
@@ -12,7 +12,6 @@ from metatrader.models.metaTraderSymbolInfo import MetaTraderSymbolInfo
 from metatrader.models.orderTypeEnum import Metatrader5OrderTypeEnum
 from metatrader.models.timeframe_enum import Metatrader5TimeframeEnum
 
-
 class MetaTrader5Integration:
     def __init__(self, metatrader_path: str, logger: Logger):
         self.logger = logger
@@ -20,7 +19,6 @@ class MetaTrader5Integration:
 
         if not mt5.initialize(self.metatrader_path):
             self.logger.fatal("Ошибка установки соединения с MetaTrader5 ({path}) - {err}", path=self.metatrader_path, err=mt5.last_error())
-            mt5.shutdown()
         else:
             self.logger.info(f'Соединение с [{metatrader_path}] установлено')
 
@@ -95,6 +93,10 @@ class MetaTrader5Integration:
     def get_symbol_info(self, symbol: str) -> MetaTraderSymbolInfo:
         def get_symbol_info_internal():
             symbol_info = mt5.symbol_info(symbol)
+
+            if symbol_info is None:
+                raise Exception(f'Symbol \'{symbol}\' not found.')
+
             return MetaTraderSymbolInfo(symbol_info)
 
         return self.__connect_and_do_work__(get_symbol_info_internal, True)
@@ -149,7 +151,7 @@ class MetaTrader5Integration:
                     start_position += len(quotes)
 
                 except Exception as e:
-                    self.logger.error("Ошибка при получении котировок для {ticker_name} - {exception}", ticker_name=ticker, exception=e)
+                    self.logger.error("Ошибка при получении котировок для {symbol} - {exception}", symbol=symbol, exception=e)
                     result = []
                     break
 
