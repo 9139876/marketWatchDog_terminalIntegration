@@ -82,7 +82,9 @@ def get_symbols():
     def internal():
         dealer_validate(request)
 
-        symbols = mt5.get_symbols()
+        symbols_dirt = mt5.get_symbols()
+        symbols = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), symbols_dirt))
+
         return jsonpickle.encode(symbols, unpicklable=False)
 
     return web_helpers.execute(internal)
@@ -96,7 +98,8 @@ def get_symbol_info():
         data = request.get_json()
         symbol = data['symbol']
 
-        symbol_info = mt5.get_symbol_info(symbol)
+        symbol_info_dirt = mt5.get_symbol_info(symbol)
+        symbol_info = web_helpers.dict_keys_modify(symbol_info_dirt, web_helpers.snake_to_lower_camel_case)
         return jsonpickle.encode(symbol_info, unpicklable=False)
 
     return web_helpers.execute(internal)

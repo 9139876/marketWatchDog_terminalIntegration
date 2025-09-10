@@ -8,7 +8,6 @@ from numpy import number
 
 from metatrader.models.metaTraderOpenedPosition import MetaTraderOpenedPosition
 from metatrader.models.metaTraderQuote import Quote
-from metatrader.models.metaTraderSymbolInfo import MetaTraderSymbolInfo
 from metatrader.models.orderTypeEnum import Metatrader5OrderTypeEnum
 from metatrader.models.timeframe_enum import Metatrader5TimeframeEnum
 
@@ -83,21 +82,21 @@ class MetaTrader5Integration:
     # endregion
 
     # region Symbol Info
-    def get_symbols(self) -> MetaTraderSymbolInfo:
+    def get_symbols(self) -> list[dict]:
         def get_symbols_internal():
             symbols = mt5.symbols_get()
-            return list(map(lambda x: MetaTraderSymbolInfo(x), symbols))
+            return list(map(lambda x: x._asdict(), symbols))
 
         return self.__connect_and_do_work__(get_symbols_internal, True)
 
-    def get_symbol_info(self, symbol: str) -> MetaTraderSymbolInfo:
+    def get_symbol_info(self, symbol: str) -> dict:
         def get_symbol_info_internal():
             symbol_info = mt5.symbol_info(symbol)
 
             if symbol_info is None:
                 raise Exception(f'Symbol \'{symbol}\' not found.')
 
-            return MetaTraderSymbolInfo(symbol_info)
+            return symbol_info._asdict()
 
         return self.__connect_and_do_work__(get_symbol_info_internal, True)
 
