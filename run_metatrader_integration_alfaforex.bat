@@ -1,1 +1,1 @@
-python .\program.py AlfaForex
+python .\program.py AlfaForex 7200

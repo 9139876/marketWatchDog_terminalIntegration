@@ -270,20 +270,18 @@ import sys
 seqlog.configure_from_file('./config/logConfig.yml')
 logger = logging.getLogger('main_logger')
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 3:
     raise Exception("Required args (dealer and port) not specified")
 
 current_dealer = Mt5DealerTypeEnum[sys.argv[1]]
+port = int(sys.argv[2])
 
 mt5: MetaTrader5Integration
-port: int
 
 if current_dealer == Mt5DealerTypeEnum.AlfaForex:
     mt5 = MetaTrader5Integration(app_config.ALPHA_FOREX_METATRADER_PATH, logging.getLogger('mt5_alfa_forex_logger'))
-    port = app_config.ALPHA_FOREX_METATRADER_PORT
 elif current_dealer == Mt5DealerTypeEnum.Finam:
     mt5 = MetaTrader5Integration(app_config.FINAM_METATRADER_PATH, logging.getLogger('mt5_finam_logger'))
-    port = app_config.FINAM_METATRADER_PORT
 else:
     raise Exception(f'Invalid dealer \'{sys.argv[1]}\'')
 
