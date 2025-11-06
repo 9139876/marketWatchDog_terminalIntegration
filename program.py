@@ -11,15 +11,6 @@ from auxiliary import web_helpers
 from metatrader.models.mt5DealerTypeEnum import Mt5DealerTypeEnum
 from metatrader.terminal_integration import MetaTrader5Integration
 
-
-def dealer_validate(_request: request):
-    data = _request.get_json()
-    dealer = data['dealerType']
-
-    if Mt5DealerTypeEnum[dealer] != current_dealer:
-        raise Exception(f'Invalid dealer - current dealer is {current_dealer}, but requested {dealer}')
-
-
 app = Flask(__name__)
 
 # region Terminal Info
@@ -29,11 +20,9 @@ terminal_info_controller = '/terminal-info'
 @app.route(f'{terminal_info_controller}/version', methods=['POST'])
 def get_version():
     def internal():
-        dealer_validate(request)
-
         return json.dumps(mt5.get_version())
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 # endregion
@@ -45,13 +34,13 @@ account_info_controller = '/account-info'
 @app.route(f'{account_info_controller}/get', methods=['POST'])
 def get_account_info():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         account_info_dirt = mt5.get_account_info()
         account_info = web_helpers.dict_keys_modify(account_info_dirt, web_helpers.snake_to_lower_camel_case)
         return jsonpickle.encode(account_info, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 # endregion
@@ -63,12 +52,12 @@ opened_positions_controller = '/opened-positions'
 @app.route(f'{opened_positions_controller}/get', methods=['POST'])
 def get_opened_positions():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         opened_positions = mt5.get_opened_positions()
         return jsonpickle.encode(opened_positions, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 # endregion
@@ -80,20 +69,20 @@ symbol_info_controller = '/symbol-info'
 @app.route(f'{symbol_info_controller}/get-symbols', methods=['POST'])
 def get_symbols():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         symbols_dirt = mt5.get_symbols()
         symbols = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), symbols_dirt))
 
         return jsonpickle.encode(symbols, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 @app.route(f'{symbol_info_controller}/get-symbol-info', methods=['POST'])
 def get_symbol_info():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -102,7 +91,7 @@ def get_symbol_info():
         symbol_info = web_helpers.dict_keys_modify(symbol_info_dirt, web_helpers.snake_to_lower_camel_case)
         return jsonpickle.encode(symbol_info, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 # endregion
@@ -114,7 +103,7 @@ position_management_controller = '/position_management'
 @app.route(f'{position_management_controller}/update-stop-loss', methods=['POST'])
 def update_stop_loss():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         identifier = int(data['identifier'])
@@ -125,13 +114,13 @@ def update_stop_loss():
 
         return jsonpickle.encode(result, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 @app.route(f'{position_management_controller}/close-position', methods=['POST'])
 def close_position():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -141,13 +130,13 @@ def close_position():
 
         return jsonpickle.encode(result, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 @app.route(f'{position_management_controller}/open-position', methods=['POST'])
 def open_position():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -160,7 +149,7 @@ def open_position():
 
         return jsonpickle.encode(result, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 # endregion
@@ -172,7 +161,7 @@ quotes_controller = '/quotes'
 @app.route(f'{quotes_controller}/get-last-quotes', methods=['POST'])
 def get_last_quotes():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbols = data['symbols']
@@ -182,13 +171,13 @@ def get_last_quotes():
         last_quotes = mt5.get_last_quotes(symbols, timeframe, count)
         return jsonpickle.encode(last_quotes, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 @app.route(f'{quotes_controller}/get-quotes', methods=['POST'])
 def get_quotes():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -198,7 +187,7 @@ def get_quotes():
         quotes = mt5.get_quotes(symbol, timeframe, count)
         return jsonpickle.encode(quotes, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 # endregion
@@ -211,7 +200,7 @@ order_check_controller = '/order-check'
 @app.route(f'{order_check_controller}/order-calc-profit', methods=['POST'])
 def order_calc_profit():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -223,13 +212,13 @@ def order_calc_profit():
         result = mt5.order_calc_profit(action_str, symbol, volume, price_open, price_close)
         return jsonpickle.encode(result, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 @app.route(f'{order_check_controller}/order-calc-margin', methods=['POST'])
 def order_calc_margin():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -240,13 +229,13 @@ def order_calc_margin():
         result = mt5.order_calc_margin(action_str, symbol, volume, price_open)
         return jsonpickle.encode(result, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
 
 @app.route(f'{order_check_controller}/order-check', methods=['POST'])
 def order_check():
     def internal():
-        dealer_validate(request)
+        __dealer_validate__(request)
 
         data = request.get_json()
         symbol = data['symbol']
@@ -259,8 +248,19 @@ def order_check():
 
         return jsonpickle.encode(result, unpicklable=False)
 
-    return web_helpers.execute(internal)
+    return web_helpers.execute(internal, mt5)
 
+
+# endregion
+
+# region private
+
+def __dealer_validate__(_request: request):
+    data = _request.get_json()
+    dealer = data['dealerType']
+
+    if Mt5DealerTypeEnum[dealer] != current_dealer:
+        raise Exception(f'Invalid dealer - current dealer is {current_dealer}, but requested {dealer}')
 
 # endregion
 

@@ -18,12 +18,25 @@ class MetaTrader5Integration:
         self.logger = logger
         self.metatrader_path = metatrader_path
 
-        if not mt5.initialize(self.metatrader_path):
-            self.logger.fatal("Ошибка установки соединения с MetaTrader5 ({path}) - {err}", path=self.metatrader_path, err=mt5.last_error())
-        else:
-            self.logger.info(f'Соединение с [{metatrader_path}] установлено')
+        self.mt5_connect_status = False
+        self.mt5_connect_last_error = ''
 
-    def __connect_and_do_work__(self, func: Callable, is_returned_value: bool = False, attempt: int = 0):
+        self.__mt5_init_internal__()
+
+    def __mt5_init_internal__(self) -> None:
+        if not mt5.initialize(self.metatrader_path):
+            self.mt5_connect_status = False
+            self.mt5_connect_last_error = mt5.last_error()
+
+            self.logger.fatal("Ошибка установки соединения с MetaTrader5 ({path}) - {err}", path=self.metatrader_path, err=self.mt5_connect_last_error)
+
+        else:
+            self.mt5_connect_status = True
+            self.mt5_connect_last_error = ''
+
+            self.logger.info(f'Соединение с [{self.metatrader_path}] установлено')
+
+    def __connect_and_do_work__(self, func: Callable, is_returned_value: bool = False, attempt: int = 1):
         try:
             if not is_returned_value:
                 func()
@@ -39,9 +52,9 @@ class MetaTrader5Integration:
 
             if last_mt5_error[0] == -10001:  # if terminal is closed
                 mt5.shutdown()
-                mt5.initialize(self.metatrader_path)
+                self.__mt5_init_internal__()
 
-                if attempt < 1:
+                if attempt <= 3:
                     return self.__connect_and_do_work__(func, is_returned_value, attempt + 1)
 
             self.logger.error("Ошибка при обращении к MetaTrader - {exception}, mt5 error - {mt5_error}", exception=e, mt5_error=mt5.last_error())
