@@ -253,6 +253,45 @@ def order_check():
 
 # endregion
 
+# region history
+
+get_history_controller = '/get-history'
+
+
+@app.route(f'{get_history_controller}/get-history-deals', methods=['POST'])
+def history_deals_get():
+    def internal():
+        __dealer_validate__(request)
+
+        data = request.get_json()
+        date_from = int(data['dateFrom'])
+
+        result_dirt = mt5.history_deals_get(date_from)
+        result = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), result_dirt))
+
+        return jsonpickle.encode(result, unpicklable=False)
+
+    return web_helpers.execute(internal, mt5)
+
+
+@app.route(f'{get_history_controller}/get-history-orders', methods=['POST'])
+def history_orders_get():
+    def internal():
+        __dealer_validate__(request)
+
+        data = request.get_json()
+        date_from = int(data['dateFrom'])
+
+        result_dirt = mt5.history_orders_get(date_from)
+        result = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), result_dirt))
+
+        return jsonpickle.encode(result, unpicklable=False)
+
+    return web_helpers.execute(internal, mt5)
+
+
+# endregion
+
 # region private
 
 def __dealer_validate__(_request: request):
@@ -261,6 +300,7 @@ def __dealer_validate__(_request: request):
 
     if Mt5DealerTypeEnum[dealer] != current_dealer:
         raise Exception(f'Invalid dealer - current dealer is {current_dealer}, but requested {dealer}')
+
 
 # endregion
 

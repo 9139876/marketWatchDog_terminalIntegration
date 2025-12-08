@@ -80,7 +80,12 @@ class MetaTrader5Integration:
     def get_account_info(self) -> dict:
 
         def get_account_info_internal():
-            return mt5.account_info()._asdict()
+            result = mt5.account_info()
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return result._asdict()
 
         return self.__connect_and_do_work__(get_account_info_internal, True)
 
@@ -221,12 +226,12 @@ class MetaTrader5Integration:
                 "ENUM_ORDER_STATE": mt5.ORDER_FILLING_RETURN
             }
 
-            result = mt5.order_send(request)._asdict()
+            result = mt5.order_send(request)
 
             if result is None:
                 raise Exception(mt5.last_error())
 
-            return result
+            return result._asdict()
 
         return self.__connect_and_do_work__(update_stop_loss_internal)
 
@@ -240,44 +245,24 @@ class MetaTrader5Integration:
                 "sl": stop_loss
             }
 
-            result = mt5.order_send(request)._asdict()
+            result = mt5.order_send(request)
 
             if result is None:
                 raise Exception(mt5.last_error())
 
-            return result
+            return result._asdict()
 
         return self.__connect_and_do_work__(open_position_internal, True)
-
-    # Старая версия, если новая заработает - эту удалить к чертям
-    # def open_position(self, order_type_str: str, symbol: str, volume: float):
-    #     def open_position_internal():
-    #         result = None
-    #         order_type = Metatrader5OrderTypeEnum[order_type_str].value
-    #
-    #         if order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_BUY:
-    #             result = mt5.Buy(symbol, volume)
-    #         elif order_type == Metatrader5OrderTypeEnum.ORDER_TYPE_SELL:
-    #             result = mt5.Sell(symbol, volume)
-    #         else:
-    #             raise Exception(f'{order_type} is not supported')
-    #
-    #         if result is None:
-    #             raise Exception(mt5.last_error())
-    #
-    #         return result
-    #
-    #     self.__connect_and_do_work__(open_position_internal, True)
 
     def close_position(self, symbol: str) -> dict:
 
         def close_position_internal():
-            result = mt5.Close(symbol)._asdict()
+            result = mt5.Close(symbol)
 
             if result is None:
                 raise Exception(mt5.last_error())
 
-            return result
+            return result._asdict()
 
         return self.__connect_and_do_work__(close_position_internal, True)
 
@@ -328,22 +313,37 @@ class MetaTrader5Integration:
                 "sl": stop_loss
             }
 
-            result = mt5.order_check(request)._asdict()
+            result = mt5.order_check(request)
 
             if result is None:
                 raise Exception(mt5.last_error())
 
-            return result
+            return result._asdict()
 
         return self.__connect_and_do_work__(order_check_internal, True)
 
     # endregion
 
-    # def update_terminal_symbols(self, symbols: list[str], verbose: bool = True) -> None:
-    #     def update_terminal_symbols_internal():
-    #         for symbol in symbols:
-    #             res = mt5.symbol_select(symbol, True)
-    #             if verbose:
-    #                 print(f'{symbol}: {'Включен' if res else 'Не удалось включить'}')
-    #
-    #     self.__connect_and_do_work__(update_terminal_symbols_internal)
+    # region history
+    def history_deals_get(self, date_from: int) -> list[dict]:
+        def history_deals_get_internal():
+            result = mt5.history_deals_get(date_from, 2147483647)
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return list(map(lambda x: x._asdict(), result))
+
+        return self.__connect_and_do_work__(history_deals_get_internal, True)
+
+    def history_orders_get(self, date_from: int) -> list[dict]:
+        def history_orders_get_internal():
+            result = mt5.history_orders_get(date_from, 2147483647)
+
+            if result is None:
+                raise Exception(mt5.last_error())
+
+            return list(map(lambda x: x._asdict(), result))
+
+        return self.__connect_and_do_work__(history_orders_get_internal, True)
+    # endregion
