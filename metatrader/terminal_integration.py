@@ -1,4 +1,5 @@
 # pyre-strict
+import traceback
 from collections.abc import Callable
 from logging import Logger
 from time import strptime
@@ -57,7 +58,7 @@ class MetaTrader5Integration:
                 if attempt <= 3:
                     return self.__connect_and_do_work__(func, is_returned_value, attempt + 1)
 
-            self.logger.error("Ошибка при обращении к MetaTrader - {exception}, mt5 error - {mt5_error}", exception=e, mt5_error=mt5.last_error())
+            self.logger.error("Ошибка при обращении к MetaTrader - {exception}, mt5 error - {mt5_error}", exception=e, mt5_error=mt5.last_error(), stacktrace=traceback.format_exc())
             raise e
 
     # region Terminal Info

@@ -327,4 +327,5 @@ else:
 
 logger.info(f'Application stared for dealer \'{current_dealer}\' on port {port}')
 
-serve(app, host="0.0.0.0", port=port)
+# 1 поток, максимум 200 ожидающих соединений - может жестко жрать ресурсы и тупить - проверить
+serve(app, host="0.0.0.0", port=port, threads=1, connection_limit=200)
