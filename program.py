@@ -125,10 +125,12 @@ def close_position():
         data = request.get_json()
         symbol = data['symbol']
 
-        result_dirt = mt5.close_position(symbol)
-        result = web_helpers.dict_keys_modify(result_dirt, web_helpers.snake_to_lower_camel_case)
+        result = mt5.close_position(symbol)
 
-        return jsonpickle.encode(result, unpicklable=False)
+        if result is True:
+            return '{ }'
+
+        raise Exception('Unknown error')
 
     return web_helpers.execute(internal, mt5)
 

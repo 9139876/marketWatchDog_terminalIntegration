@@ -234,7 +234,7 @@ class MetaTrader5Integration:
 
             return result._asdict()
 
-        return self.__connect_and_do_work__(update_stop_loss_internal)
+        return self.__connect_and_do_work__(update_stop_loss_internal, True)
 
     def open_position(self, action_str: str, symbol: str, volume: float, stop_loss: float) -> dict:
         def open_position_internal():
@@ -255,7 +255,7 @@ class MetaTrader5Integration:
 
         return self.__connect_and_do_work__(open_position_internal, True)
 
-    def close_position(self, symbol: str) -> dict:
+    def close_position(self, symbol: str) -> bool:
 
         def close_position_internal():
             result = mt5.Close(symbol)
@@ -263,7 +263,7 @@ class MetaTrader5Integration:
             if result is None:
                 raise Exception(mt5.last_error())
 
-            return result._asdict()
+            return result
 
         return self.__connect_and_do_work__(close_position_internal, True)
 
