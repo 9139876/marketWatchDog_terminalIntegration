@@ -192,6 +192,23 @@ def get_quotes():
     return web_helpers.execute(internal, mt5)
 
 
+@app.route(f'{quotes_controller}/get-range-quotes', methods=['POST'])
+def get_range_quotes():
+    def internal():
+        __dealer_validate__(request)
+
+        data = request.get_json()
+        symbol = data['symbol']
+        timeframe = data['timeframe']
+        date_from = int(data['dateFrom'])
+        date_to = int(data['dateTo'])
+
+        quotes = mt5.get_range_quotes(symbol, timeframe, date_from, date_to)
+        return jsonpickle.encode(quotes, unpicklable=False)
+
+    return web_helpers.execute(internal, mt5)
+
+
 # endregion
 
 # region order_check

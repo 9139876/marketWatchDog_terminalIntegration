@@ -179,26 +179,21 @@ class MetaTrader5Integration:
 
         return self.__connect_and_do_work__(get_quotes_internal, True)
 
-    # Not checked!!!
-    def get_range_quotes(self, symbols: list[str], timeframe_str: str, date_from_str: str, date_to_str: str) -> dict[str, list[Quote]]:
+    def get_range_quotes(self, symbol: str, timeframe_str: str, date_from: int, date_to: int) -> list[Quote]:
         def get_range_quotes_internal():
             timeframe = Metatrader5TimeframeEnum[timeframe_str]
-            date_from = strptime(date_from_str)
-            date_to = strptime(date_to_str)
-            result: dict[str, list[Quote]] = {}
+            result: list[Quote] = []
 
-            for symbol in symbols:
-                try:
-                    rates = mt5.copy_rates_range(symbol, timeframe.value, date_from, date_to)
-                    if rates is None or len(rates) == 0:
-                        result.update({symbol: []})
-                        continue
+            try:
+                rates = mt5.copy_rates_range(symbol, timeframe.value, date_from, date_to)
 
-                    quotes = list(map(lambda x: Quote(x), rates))
-                    result.update({symbol: quotes})
-                except Exception as e:
-                    self.logger.error("Ошибка при получении котировок для {symbol} - {exception}", symbol=symbol, exception=e)
-                    result.update({symbol: []})
+                if rates is None or len(rates) == 0:
+                    result = []
+                else:
+                    result = list(map(lambda x: Quote(x), rates))
+            except Exception as e:
+                self.logger.error("Ошибка при получении котировок для {symbol} - {exception}", symbol=symbol, exception=e)
+                result = []
 
             return result
 
