@@ -8,6 +8,7 @@ from waitress import serve
 
 from config import app_config
 from auxiliary import web_helpers
+from metatrader.auxiliary import datetime_str_to_unix_time
 from metatrader.enums.mt5_dealer_type_enum import Mt5DealerTypeEnum
 from metatrader.terminal_integration import MetaTrader5Integration
 
@@ -200,8 +201,8 @@ def get_range_quotes():
         data = request.get_json()
         symbol = data['symbol']
         timeframe = data['timeframe']
-        date_from = int(data['dateFrom'])
-        date_to = int(data['dateTo'])
+        date_from = datetime_str_to_unix_time(data['dateFrom'])
+        date_to = datetime_str_to_unix_time(data['dateTo'])
 
         quotes = mt5.get_range_quotes(symbol, timeframe, date_from, date_to)
         return jsonpickle.encode(quotes, unpicklable=False)
@@ -283,10 +284,8 @@ def history_deals_get():
         __dealer_validate__(request)
 
         data = request.get_json()
-        date_from = int(data['dateFrom'])
+        date_from = datetime_str_to_unix_time(data['dateFrom'])
 
-        # result_dirt = mt5.history_deals_get(date_from)
-        # result = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), result_dirt))
         result = mt5.history_deals_get(date_from)
 
         return jsonpickle.encode(result, unpicklable=False)

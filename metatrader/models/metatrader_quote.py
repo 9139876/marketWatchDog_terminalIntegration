@@ -16,7 +16,7 @@ class Quote:
     def create(data: tuple) -> 'Quote':
         return Quote(
             date=unix_time_to_datetime(data[0]),
-            open=data[1],
-            high=data[2],
-            low=data[3],
-            close=data[4])
+            open=float(data[1]),
+            high=float(data[2]),
+            low=float(data[3]),
+            close=float(data[4]))
