@@ -8,7 +8,7 @@ from waitress import serve
 
 from config import app_config
 from auxiliary import web_helpers
-from metatrader.models.mt5DealerTypeEnum import Mt5DealerTypeEnum
+from metatrader.enums.mt5_dealer_type_enum import Mt5DealerTypeEnum
 from metatrader.terminal_integration import MetaTrader5Integration
 
 app = Flask(__name__)
@@ -285,8 +285,9 @@ def history_deals_get():
         data = request.get_json()
         date_from = int(data['dateFrom'])
 
-        result_dirt = mt5.history_deals_get(date_from)
-        result = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), result_dirt))
+        # result_dirt = mt5.history_deals_get(date_from)
+        # result = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), result_dirt))
+        result = mt5.history_deals_get(date_from)
 
         return jsonpickle.encode(result, unpicklable=False)
 
@@ -326,7 +327,7 @@ def __dealer_validate__(_request: request):
 # configure application
 import sys
 
-seqlog.configure_from_file('./config/logConfig.yml')
+seqlog.configure_from_file('config/log_config.yml')
 logger = logging.getLogger('main_logger')
 
 if len(sys.argv) < 3:

@@ -2,16 +2,15 @@
 import traceback
 from collections.abc import Callable
 from logging import Logger
-from time import strptime
 
 import MetaTrader5 as mt5
-# from MetaTrader5 import last_error
 from numpy import number
 
-from metatrader.models.metaTraderOpenedPosition import MetaTraderOpenedPosition
-from metatrader.models.metaTraderQuote import Quote
-from metatrader.models.orderTypeEnum import Metatrader5OrderTypeEnum
-from metatrader.models.timeframe_enum import Metatrader5TimeframeEnum
+from metatrader.models.metatrader_deal import MetaTraderDeal
+from metatrader.models.metatrader_opened_position import MetaTraderOpenedPosition
+from metatrader.models.metatrader_quote import Quote
+from metatrader.enums.order_type_enum import Metatrader5OrderTypeEnum
+from metatrader.enums.timeframe_enum import Metatrader5TimeframeEnum
 
 
 class MetaTrader5Integration:
@@ -138,7 +137,7 @@ class MetaTrader5Integration:
                         result.update({symbol: []})
                         continue
 
-                    quotes = list(map(lambda x: Quote(x), rates))
+                    quotes = list(map(lambda x: Quote.create(x), rates))
                     result.update({symbol: quotes})
                 except Exception as e:
                     self.logger.error("Ошибка при получении котировок для {symbol} - {exception}", symbol=symbol, exception=e)
@@ -166,7 +165,7 @@ class MetaTrader5Integration:
                     if rates is None or len(rates) == 0:
                         break
 
-                    quotes = list(map(lambda x: Quote(x), rates))
+                    quotes = list(map(lambda x: Quote.create(x), rates))
                     result.extend(quotes)
                     start_position += len(quotes)
 
@@ -190,7 +189,7 @@ class MetaTrader5Integration:
                 if rates is None or len(rates) == 0:
                     result = []
                 else:
-                    result = list(map(lambda x: Quote(x), rates))
+                    result = list(map(lambda x: Quote.create(x), rates))
             except Exception as e:
                 self.logger.error("Ошибка при получении котировок для {symbol} - {exception}", symbol=symbol, exception=e)
                 result = []
@@ -321,14 +320,14 @@ class MetaTrader5Integration:
     # endregion
 
     # region history
-    def history_deals_get(self, date_from: int) -> list[dict]:
+    def history_deals_get(self, date_from: int) -> list[MetaTraderDeal]:
         def history_deals_get_internal():
             result = mt5.history_deals_get(date_from, 2147483647)
 
             if result is None:
                 raise Exception(mt5.last_error())
 
-            return list(map(lambda x: x._asdict(), result))
+            return list(map(lambda x: MetaTraderDeal.create(x), result))
 
         return self.__connect_and_do_work__(history_deals_get_internal, True)
 
