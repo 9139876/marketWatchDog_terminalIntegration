@@ -1,16 +1,33 @@
-import datetime
-import calendar
-
+from datetime import datetime, UTC, timezone, timedelta
 from dateutil.parser import parse
 
 
-def unix_time_to_datetime(unix_time:int) -> datetime.datetime:
-    return (datetime.datetime.fromtimestamp(unix_time, datetime.UTC)).replace(tzinfo=datetime.timezone(datetime.timedelta(hours=3)))
+def is_utc(date_time: datetime) -> bool:
+    return date_time.strftime('%Z') == 'UTC'
 
-def datetime_to_unix_time(date_time:datetime.datetime) -> int:
-    return calendar.timegm(date_time.timetuple())
+
+def unix_time_to_datetime(unix_time: int) -> datetime:
+    date_time = datetime.fromtimestamp(unix_time, UTC)
+
+    # Корректировка кривого времени в MetaTrader
+    corrected_date_time = date_time.replace(tzinfo=timezone(timedelta(hours=3)))
+
+    return corrected_date_time.astimezone(UTC)
+
+def datetime_to_unix_time(date_time: datetime) -> int:
+    if not is_utc(date_time):
+        raise ValueError(f'{date_time} is not UTC')
+
+    # Корректировка кривого времени в MetaTrader
+    corrected_date_time = date_time.replace(tzinfo=timezone(timedelta(hours=-3)))
+
+    return int(corrected_date_time.timestamp())
+
 
 def datetime_str_to_unix_time(date_time_str: str) -> int:
-    return datetime_to_unix_time(parse(date_time_str))
+    date_time = parse(date_time_str)
 
-    # fromtimestamp(unix_time, datetime.UTC)).replace(tzinfo=datetime.timezone(datetime.timedelta(hours=3)))
+    if not is_utc(date_time):
+        raise ValueError(f'{date_time_str} is not UTC')
+
+    return datetime_to_unix_time(date_time)

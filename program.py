@@ -299,7 +299,7 @@ def history_orders_get():
         __dealer_validate__(request)
 
         data = request.get_json()
-        date_from = int(data['dateFrom'])
+        date_from = datetime_str_to_unix_time(data['dateFrom'])
 
         result_dirt = mt5.history_orders_get(date_from)
         result = list(map(lambda x: web_helpers.dict_keys_modify(x, web_helpers.snake_to_lower_camel_case), result_dirt))
