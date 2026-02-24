@@ -1,1 +1,1 @@
-python .\program.py AlfaForex 7200
+python .\program.py AlfaForex 7200 dev

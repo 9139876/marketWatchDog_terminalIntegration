@@ -1,1 +1,0 @@
-python .\program.py Finam 7100
