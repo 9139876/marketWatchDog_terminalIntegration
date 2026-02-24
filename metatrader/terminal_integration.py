@@ -14,9 +14,12 @@ from metatrader.enums.timeframe_enum import Metatrader5TimeframeEnum
 
 
 class MetaTrader5Integration:
-    def __init__(self, metatrader_path: str, logger: Logger):
+    def __init__(self, metatrader_path: str, login: int, password: str, server: str, logger: Logger):
         self.logger = logger
         self.metatrader_path = metatrader_path
+        self.login = login
+        self.password = password
+        self.server = server
 
         self.mt5_connect_status = False
         self.mt5_connect_last_error = ''
@@ -24,7 +27,7 @@ class MetaTrader5Integration:
         self.__mt5_init_internal__()
 
     def __mt5_init_internal__(self) -> None:
-        if not mt5.initialize(self.metatrader_path):
+        if not mt5.initialize(self.metatrader_path, login=self.login, password=self.password, server=self.server):
             self.mt5_connect_status = False
             self.mt5_connect_last_error = mt5.last_error()
 
