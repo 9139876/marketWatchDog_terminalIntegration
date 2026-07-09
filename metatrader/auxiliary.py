@@ -31,3 +31,12 @@ def datetime_str_to_unix_time(date_time_str: str) -> int:
         raise ValueError(f'{date_time_str} is not UTC')
 
     return datetime_to_unix_time(date_time)
+
+def datetime_str_to_utc_str(date_time_str: str) -> str:
+    dt = parse(date_time_str)
+
+    if is_utc(dt):
+        return dt.isoformat()
+
+    utc_dt = dt.astimezone(timezone.utc)
+    return utc_dt.isoformat()

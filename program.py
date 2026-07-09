@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import threading
+from time import sleep
 
 import jsonpickle
 from flask import Flask, request
@@ -11,6 +13,8 @@ from auxiliary import web_helpers
 from metatrader.auxiliary import datetime_str_to_unix_time
 from metatrader.enums.mt5_dealer_type_enum import Mt5DealerTypeEnum
 from metatrader.terminal_integration import MetaTrader5Integration
+from monitoring.logger_callback_handler import CallbackHandler
+from monitoring.monitoring_logger_callback import Monitoring
 
 app = Flask(__name__)
 
@@ -366,6 +370,7 @@ password = os.environ.get(f'{dealer_str}_Password_{env}')
 server = os.environ.get(f'{dealer_str}_Server_{env}')
 
 # logger
+# В мониторинг отправка через SendLog JSON из logger callback
 logger = logging.getLogger(f'{dealer_str}_{env}_logger')
 logger.setLevel(logging.DEBUG)
 
@@ -395,7 +400,40 @@ elif current_dealer == Mt5DealerTypeEnum.Finam:
 else:
     raise Exception(f'Invalid dealer \'{sys.argv[1]}\'')
 
+# Обработчик для мониторинга
+def empty_task(_mt5: MetaTrader5Integration):
+    pass
+
+i_am_alive_task = empty_task
+
+use_monitoring_str = os.environ.get('UseMonitoring')
+use_monitoring = True if use_monitoring_str == '1' else False
+
+if use_monitoring:
+    server_url = os.environ.get('MonitoringServerUrl')
+    monitoring_secret_key = os.environ.get('MonitoringSecretKey')
+    component_id = os.environ.get(f'IntegrationComponentId_{dealer_str}_{env}')
+    unit_test_id = os.environ.get(f'IntegrationUnitTestId_{dealer_str}_{env}')
+
+    monitoring = Monitoring(server_url, monitoring_secret_key, component_id, unit_test_id)
+    monitoring_handler = CallbackHandler(monitoring.logger_callback)
+    logger.addHandler(monitoring_handler)
+
+    # IAmAlive
+    i_am_alive_task = monitoring.send_i_am_alive
+
+def schedule_next_run(interval_seconds: int):
+    def wrapper():
+        try:
+            i_am_alive_task(mt5)
+        finally:
+            # Планируем следующий запуск
+            threading.Timer(interval_seconds, wrapper).start()
+    wrapper()
+
 logger.info(f'Application running for dealer \'{current_dealer}\' on port {port}')
+
+schedule_next_run(30)
 
 # 1 поток, максимум 200 ожидающих соединений - может жестко жрать ресурсы и тупить - проверить
 serve(app, host="0.0.0.0", port=port, threads=1, connection_limit=200)
