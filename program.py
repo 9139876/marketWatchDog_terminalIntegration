@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import threading
-from time import sleep
 
 import jsonpickle
 from flask import Flask, request
