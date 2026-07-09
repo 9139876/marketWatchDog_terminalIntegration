@@ -4,5 +4,4 @@ MetaTrader5==5.0.5640
 numpy==2.4.2
 python_dateutil==2.9.0.post0
 rich==14.3.3
-seqlog==0.4.0
 waitress==3.0.2

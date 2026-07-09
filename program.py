@@ -2,7 +2,6 @@ import json
 import logging
 import os
 
-import seqlog
 import jsonpickle
 from flask import Flask, request
 from waitress import serve
@@ -92,6 +91,33 @@ def get_symbol_info():
         symbol_info_dirt = mt5.get_symbol_info(symbol)
         symbol_info = web_helpers.dict_keys_modify(symbol_info_dirt, web_helpers.snake_to_lower_camel_case)
         return jsonpickle.encode(symbol_info, unpicklable=False)
+
+    return web_helpers.execute(internal, mt5)
+
+
+@app.route(f'{symbol_info_controller}/get-symbols-rating', methods=['GET'])
+def get_symbol_rating():
+    def internal():
+        symbols = mt5.get_symbols()
+        ratings = []
+
+        for symbol in symbols:
+            price = (symbol['ask'] + symbol['bid']) / 2
+
+            if price == 0:
+                continue
+
+            spread = symbol['spread']
+            point = symbol['point']
+            digits = symbol['digits']
+            name = symbol['name']
+            spread_div_price = 100 * spread * point / price
+
+            ratings.append({'name': name, 'spreadDivPrice': round(spread_div_price, 2), 'spread': spread, 'price': round(price, digits)})
+
+        ratings = sorted(ratings, key=lambda item: item['spreadDivPrice'])
+
+        return jsonpickle.encode(ratings, unpicklable=False)
 
     return web_helpers.execute(internal, mt5)
 
@@ -327,9 +353,6 @@ def __dealer_validate__(_request: request):
 # configure application
 import sys
 
-seqlog.configure_from_file('config/log_config.yml')
-logger = logging.getLogger('main_logger')
-
 if len(sys.argv) < 4:
     raise Exception("Required args (dealer, port, environment) not specified")
 
@@ -342,16 +365,37 @@ login = int(os.environ.get(f'{dealer_str}_Login_{env}'))
 password = os.environ.get(f'{dealer_str}_Password_{env}')
 server = os.environ.get(f'{dealer_str}_Server_{env}')
 
+# logger
+logger = logging.getLogger(f'{dealer_str}_{env}_logger')
+logger.setLevel(logging.DEBUG)
+
+# Обработчик для консоли
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+
+# Обработчик для файла
+file_handler = logging.FileHandler(f'{dealer_str}_{env}.log', encoding="utf-8")
+file_handler.setLevel(logging.INFO)
+
+# Форматировщик (одинаковый для обоих)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+
+# Добавляем обработчики к логгеру
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
 mt5: MetaTrader5Integration
 
 if current_dealer == Mt5DealerTypeEnum.AlfaForex:
-    mt5 = MetaTrader5Integration(app_config.ALPHA_FOREX_METATRADER_PATH, login, password, server, logging.getLogger('mt5_alfa_forex_logger'))
+    mt5 = MetaTrader5Integration(app_config.ALPHA_FOREX_METATRADER_PATH, login, password, server, logger)
 elif current_dealer == Mt5DealerTypeEnum.Finam:
-    mt5 = MetaTrader5Integration(app_config.FINAM_METATRADER_PATH, login, password, server, logging.getLogger('mt5_finam_logger'))
+    mt5 = MetaTrader5Integration(app_config.FINAM_METATRADER_PATH, login, password, server, logger)
 else:
     raise Exception(f'Invalid dealer \'{sys.argv[1]}\'')
 
-logger.info(f'Application stared for dealer \'{current_dealer}\' on port {port}')
+logger.info(f'Application running for dealer \'{current_dealer}\' on port {port}')
 
 # 1 поток, максимум 200 ожидающих соединений - может жестко жрать ресурсы и тупить - проверить
 serve(app, host="0.0.0.0", port=port, threads=1, connection_limit=200)

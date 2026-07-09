@@ -177,6 +177,10 @@ class MetaTrader5Integration:
                     result = []
                     break
 
+            def get_key(quote:Quote):
+                return quote.date
+
+            result.sort(key=get_key, reverse=False)
             return result
 
         return self.__connect_and_do_work__(get_quotes_internal, True)
